@@ -1,0 +1,59 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+body {
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+.public-container {
+    background: rgba(255,255,255,0.95);
+    border-radius: 20px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 600px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    text-align: center;
+}
+h1 {
+    color: #1e3c72;
+    margin-bottom: 1.5rem;
+}
+.account-card {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 12px;
+    border-right: 5px solid #2a5298;
+    text-align: right;
+}
+.account-card h3 {
+    color: #2a5298;
+    margin-bottom: 5px;
+}
+.account-card a {
+    display: inline-block;
+    margin-top: 8px;
+    background: #2a5298;
+    color: white;
+    padding: 5px 12px;
+    border-radius: 20px;
+    text-decoration: none;
+    font-size: 0.9rem;
+}
+.account-card a:hover {
+    background: #1e3c72;
+}
+footer {
+    margin-top: 1.5rem;
+}
+footer a {
+    color: #2a5298;
+    text-decoration: none;
+}
