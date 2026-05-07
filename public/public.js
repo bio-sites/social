@@ -17,7 +17,6 @@ const container = document.getElementById('accountsListPublic');
 const usernameDisplaySpan = document.getElementById('usernameDisplay');
 const fullUrl = window.location.href;
 
-// استخراج المعرف القصير
 let shortId = null;
 const match = fullUrl.match(/[?&]id=([^&]+)/);
 if (match && match[1]) {
@@ -48,14 +47,18 @@ async function findUserIdByShortId(shortId) {
         const userName = data.userName || "المستخدم";
         
         if (usernameDisplaySpan) usernameDisplaySpan.innerText = userName;
-        await loadAccounts(userId);
         
+        // تحميل ترتيب المنصات
+        const orderDoc = await getDoc(doc(db, 'platformsOrder', userId));
+        let platformsOrder = orderDoc.exists() ? orderDoc.data().order : [];
+        
+        await loadAccounts(userId, platformsOrder);
     } catch (err) {
         container.innerHTML = `<p style="color:red;">⚠️ خطأ: ${err.message}</p>`;
     }
 }
 
-async function loadAccounts(uid) {
+async function loadAccounts(uid, platformsOrder) {
     try {
         const q = query(collection(db, "accounts"), where("userId", "==", uid));
         const snapshot = await getDocs(q);
@@ -65,24 +68,43 @@ async function loadAccounts(uid) {
             return;
         }
         
-        container.innerHTML = "";
+        // تجميع الحسابات حسب المنصة
+        const accountsByPlatform = {};
         snapshot.forEach(doc => {
-            const data = doc.data();
-            const card = document.createElement("div");
-            card.className = "account-card";
-            card.innerHTML = `
-                <h3>📱 ${escapeHtml(data.platform)}</h3>
-                <p>@${escapeHtml(data.username)}</p>
-                <a href="${data.url}" target="_blank">🔗 زيارة الحساب</a>
-            `;
-            container.appendChild(card);
+            const account = doc.data();
+            if (!accountsByPlatform[account.platform]) {
+                accountsByPlatform[account.platform] = [];
+            }
+            accountsByPlatform[account.platform].push(account);
         });
-    } catch (err) {
-        container.innerHTML = `<p style="color:red;">⚠️ خطأ: ${err.message}</p>`;
-    }
-}
-
-function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/[&<>]/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[m]));
-}
+        
+        // ترتيب المنصات
+        const orderedPlatforms = platformsOrder.filter(p => accountsByPlatform[p]);
+        const otherPlatforms = Object.keys(accountsByPlatform).filter(p => !orderedPlatforms.includes(p));
+        const finalPlatforms = [...orderedPlatforms, ...otherPlatforms];
+        
+        container.innerHTML = '';
+        
+        for (const platform of finalPlatforms) {
+            const accounts = accountsByPlatform[platform];
+            if (!accounts) continue;
+            
+            // قسم المنصة
+            const platformDiv = document.createElement('div');
+            platformDiv.style.cssText = 'margin-bottom: 25px; border: 1px solid #ddd; border-radius: 15px; overflow: hidden;';
+            
+            // عنوان المنصة
+            const header = document.createElement('div');
+            header.style.cssText = 'background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 12px 15px;';
+            header.innerHTML = `<h3 style="margin:0;">${getPlatformIcon(platform)} ${platform}</h3>`;
+            
+            // الحسابات
+            const accountsDiv = document.createElement('div');
+            accountsDiv.style.cssText = 'padding: 10px; background: #f8f9fa;';
+            
+            accounts.forEach((account, idx) => {
+                const isPrimary = idx === 0;
+                const card = document.createElement('div');
+                card.style.cssText = 'background: white; border-radius: 10px; padding: 12px; margin-bottom: 8px; border-right: 4px solid #667eea;';
+                card.innerHTML = `
+                    ${isPrimary ? '<div style="background: gold; color: #333; padding: 2px 8px; border-radius
