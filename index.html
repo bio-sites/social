@@ -7,39 +7,62 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <!-- نموذج تسجيل الدخول وإنشاء حساب -->
-<div class="auth-container" id="authContainer">
-    <h2>تسجيل الدخول أو إنشاء حساب</h2>
-    <form id="authForm">
-        <input type="text" id="signupName" placeholder="الاسم الذي سيظهر في صفحتك العامة" style="display:none;">
-        <input type="email" id="email" placeholder="البريد الإلكتروني" required>
-        <input type="password" id="password" placeholder="كلمة المرور" required>
-        <button type="button" id="loginBtn">تسجيل الدخول</button>
-        <button type="button" id="showSignupBtn" style="background-color:#28a745;">إنشاء حساب جديد</button>
-    </form>
-    <div id="authMessage"></div>
-</div>
+    <!-- نموذج تسجيل الدخول -->
+    <div class="auth-container" id="authContainer">
+        <h2>تسجيل الدخول أو إنشاء حساب</h2>
+        <form id="authForm">
+            <input type="text" id="signupName" placeholder="الاسم الذي سيظهر في صفحتك العامة" style="display:none;">
+            <input type="email" id="email" placeholder="البريد الإلكتروني" required>
+            <input type="password" id="password" placeholder="كلمة المرور" required>
+            <button type="button" id="loginBtn">تسجيل الدخول</button>
+            <button type="button" id="showSignupBtn" style="background-color:#28a745;">إنشاء حساب جديد</button>
+        </form>
+        <div id="authMessage"></div>
+    </div>
 
-    <!-- الواجهة الرئيسية بعد تسجيل الدخول -->
+    <!-- الواجهة الرئيسية -->
     <div class="app-container" id="appContainer" style="display:none;">
         <header>
             <h1>📱 حسابات <span id="profileName">...</span></h1>
             <div>
                 <button id="editProfileBtn" style="background-color:#ffc107; color:#333;">✏️ تعديل الاسم</button>
+                <button id="orderPlatformsBtn" style="background-color:#17a2b8;">📌 ترتيب المنصات</button>
                 <button id="logoutBtn" style="background-color:#dc3545;">تسجيل خروج</button>
                 <button id="shareBtn" style="background-color:#28a745;">🔗 مشاركة ملفي الشخصي</button>
             </div>
         </header>
         
+        <!-- إضافة حساب جديد -->
         <div class="add-form">
             <h3>➕ إضافة حساب جديد</h3>
-            <input type="text" id="platform" placeholder="اسم المنصة (مثل Twitter)" required>
-            <input type="text" id="username" placeholder="اسم المستخدم في المنصة" required>
-            <input type="url" id="url" placeholder="الرابط (https://...)" required>
-            <button id="addAccountBtn">إضافة</button>
+            <select id="platformSelect">
+                <option value="new">+ إضافة منصة جديدة</option>
+                <option value="TikTok">📱 TikTok</option>
+                <option value="YouTube">🎥 YouTube</option>
+                <option value="Instagram">📸 Instagram</option>
+                <option value="Twitter">🐦 Twitter</option>
+                <option value="Snapchat">👻 Snapchat</option>
+                <option value="Facebook">📘 Facebook</option>
+            </select>
+            <input type="text" id="newPlatform" placeholder="اسم المنصة الجديدة" style="display:none;">
+            <input type="text" id="accountUsername" placeholder="اسم المستخدم في المنصة" required>
+            <input type="url" id="accountUrl" placeholder="الرابط (https://...)" required>
+            <button id="addAccountBtn">➕ إضافة</button>
         </div>
         
+        <!-- عرض الحسابات مرتبة حسب المنصة -->
         <div id="accountsList"></div>
+    </div>
+
+    <!-- نافذة ترتيب المنصات (منبثقة) -->
+    <div id="orderModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; justify-content:center; align-items:center;">
+        <div style="background:white; border-radius:20px; padding:20px; width:90%; max-width:400px;">
+            <h3>📌 ترتيب ظهور المنصات</h3>
+            <p style="font-size:14px; color:#666;">اسحب المنصات لترتيبها حسب الأهمية</p>
+            <div id="sortablePlatformsList" style="list-style:none; padding:0;"></div>
+            <button id="saveOrderBtn" style="background-color:#28a745;">💾 حفظ الترتيب</button>
+            <button id="closeOrderBtn" style="background-color:#6c757d;">إغلاق</button>
+        </div>
     </div>
 
     <script type="module" src="firebase-config.js"></script>
