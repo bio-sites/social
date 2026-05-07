@@ -39,9 +39,7 @@ let currentProfileName = "";
 let isSignupMode = false;
 let userPlatformsOrder = [];
 let sortable = null;
-let accountsSortable = {}; // لتخزين كائنات Sortable لكل منصة
 
-// المنصات الأساسية المحددة مسبقاً
 const defaultPlatforms = ['TikTok', 'YouTube', 'Instagram', 'Twitter', 'Snapchat', 'Facebook'];
 let customPlatforms = [];
 
@@ -107,7 +105,6 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-// تحميل ترتيب المنصات من Firebase
 async function loadPlatformsOrder() {
     if (!currentUser) return;
     try {
@@ -120,12 +117,11 @@ async function loadPlatformsOrder() {
         }
         await loadCustomPlatforms();
     } catch (error) {
-        console.error("خطأ في تحميل الترتيب:", error);
+        console.error("خطأ:", error);
         userPlatformsOrder = [...defaultPlatforms];
     }
 }
 
-// تحميل المنصات المخصصة من الحسابات
 async function loadCustomPlatforms() {
     if (!currentUser) return;
     try {
@@ -133,19 +129,15 @@ async function loadCustomPlatforms() {
         const snapshot = await getDocs(q);
         const existingPlatforms = new Set();
         snapshot.forEach(doc => {
-            const platform = doc.data().platform;
-            existingPlatforms.add(platform);
+            existingPlatforms.add(doc.data().platform);
         });
-        
         customPlatforms = [...existingPlatforms].filter(p => !defaultPlatforms.includes(p));
-        
         updatePlatformSelect();
     } catch (error) {
         console.error("خطأ:", error);
     }
 }
 
-// تحديث قائمة المنصات في Select
 function updatePlatformSelect() {
     if (!platformSelect) return;
     platformSelect.innerHTML = '<option value="new">+ إضافة منصة جديدة</option>';
@@ -166,7 +158,6 @@ function getPlatformIcon(platform) {
     return icons[platform] || '🔗';
 }
 
-// تحميل اسم المستخدم
 async function loadUserProfile() {
     if (!currentUser) return;
     try {
@@ -179,7 +170,6 @@ async function loadUserProfile() {
     }
 }
 
-// حفظ اسم المستخدم
 async function saveUserProfile(name) {
     if (!currentUser) return false;
     try {
@@ -197,7 +187,6 @@ async function saveUserProfile(name) {
     }
 }
 
-// تعديل الاسم
 if (editProfileBtn) {
     editProfileBtn.onclick = async () => {
         const newName = prompt("أدخل الاسم الذي سيظهر في صفحتك العامة:", currentProfileName);
@@ -208,7 +197,6 @@ if (editProfileBtn) {
     };
 }
 
-// معالجة زر تسجيل الدخول / إنشاء الحساب
 if (loginBtn) {
     loginBtn.onclick = async () => {
         const email = emailInput.value.trim();
@@ -260,36 +248,24 @@ if (loginBtn) {
     };
 }
 
-// تسجيل الخروج
 if (logoutBtn) {
     logoutBtn.onclick = async () => {
         await signOut(auth);
     };
 }
 
-// حفظ ترتيب الحسابات داخل منصة معينة
 async function saveAccountsOrder(platform, accountIds) {
     if (!currentUser) return;
-    
-    // تحديث ترتيب كل حساب في Firestore
     for (let i = 0; i < accountIds.length; i++) {
-        const accountRef = doc(db, 'accounts', accountIds[i]);
-        await updateDoc(accountRef, {
-            orderIndex: i,
-            updatedAt: new Date()
-        });
+        await updateDoc(doc(db, 'accounts', accountIds[i]), { orderIndex: i });
     }
-    
-    console.log(`✅ تم حفظ ترتيب حسابات منصة ${platform}`);
 }
 
-// تحميل وعرض الحسابات (مرتبة حسب المنصة مع إمكانية السحب)
 async function loadAccounts() {
     if (!currentUser) return;
     const q = query(collection(db, 'accounts'), where("userId", "==", currentUser.uid));
     const snapshot = await getDocs(q);
     
-    // تجميع الحسابات حسب المنصة
     const accountsByPlatform = {};
     snapshot.forEach(doc => {
         const account = doc.data();
@@ -300,7 +276,6 @@ async function loadAccounts() {
         accountsByPlatform[account.platform].push(account);
     });
     
-    // ترتيب الحسابات داخل كل منصة حسب orderIndex
     for (const platform in accountsByPlatform) {
         accountsByPlatform[platform].sort((a, b) => {
             const aIndex = a.orderIndex !== undefined ? a.orderIndex : 0;
@@ -309,76 +284,74 @@ async function loadAccounts() {
         });
     }
     
-    // ترتيب المنصات حسب إعدادات المستخدم
     const orderedPlatforms = userPlatformsOrder.filter(p => accountsByPlatform[p]);
     const otherPlatforms = Object.keys(accountsByPlatform).filter(p => !orderedPlatforms.includes(p));
     const finalPlatforms = [...orderedPlatforms, ...otherPlatforms];
     
-    // عرض الحسابات
     accountsList.innerHTML = '';
     
     for (const platform of finalPlatforms) {
         const accounts = accountsByPlatform[platform];
         if (!accounts || accounts.length === 0) continue;
         
-        // إنشاء قسم المنصة
-        const platformSection = document.createElement('div');
-        platformSection.className = 'platform-section';
-        platformSection.setAttribute('data-platform', platform);
-        platformSection.style.cssText = 'margin-bottom: 25px; border: 1px solid #ddd; border-radius: 15px; overflow: hidden;';
+        // إنشاء عنصر الأكورديون
+        const accordion = document.createElement('div');
+        accordion.className = 'platform-accordion';
         
-        // رأس المنصة
-        const platformHeader = document.createElement('div');
-        platformHeader.style.cssText = 'background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 12px 15px; display: flex; justify-content: space-between; align-items: center;';
-        platformHeader.innerHTML = `
-            <h3 style="margin:0;">${getPlatformIcon(platform)} ${platform}</h3>
-            <div>
-                <button class="addAccountToPlatform" data-platform="${platform}" style="background: rgba(255,255,255,0.2); color: white; border: none; border-radius: 20px; padding: 5px 12px; cursor: pointer;">➕ إضافة حساب</button>
+        // رأس الأكورديون
+        const header = document.createElement('div');
+        header.className = 'accordion-header';
+        header.innerHTML = `
+            <h3>
+                <span>${getPlatformIcon(platform)} ${platform}</span>
+                <span class="arrow">▼</span>
+            </h3>
+            <div class="platform-actions">
+                <button class="addAccountBtn" data-platform="${platform}">➕ إضافة</button>
             </div>
         `;
         
-        // حاوية الحسابات (قابلة للسحب)
-        const accountsContainer = document.createElement('div');
-        accountsContainer.className = 'accounts-container';
-        accountsContainer.setAttribute('data-platform', platform);
-        accountsContainer.style.cssText = 'padding: 10px; background: #f8f9fa; min-height: 100px;';
+        // محتوى الأكورديون (الحسابات)
+        const content = document.createElement('div');
+        content.className = 'accordion-content';
         
-        // إضافة الحسابات
+        const accountsContainer = document.createElement('div');
+        accountsContainer.className = 'accounts-list';
+        accountsContainer.setAttribute('data-platform', platform);
+        
         accounts.forEach((account, idx) => {
             const isPrimary = idx === 0;
             const card = document.createElement('div');
+            card.className = 'account-card';
             card.setAttribute('data-account-id', account.id);
-            card.style.cssText = 'background: white; border-radius: 10px; padding: 12px; margin-bottom: 8px; border-right: 4px solid #667eea; display: flex; justify-content: space-between; align-items: center; cursor: grab;';
             card.innerHTML = `
-                <div style="flex:1;">
-                    <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                        <span style="cursor:grab; color:#999; margin-left:8px;">☰</span>
-                        ${isPrimary ? '<span style="background: gold; color: #333; padding: 2px 8px; border-radius: 20px; font-size: 11px;">⭐ الأساسي</span>' : ''}
-                        <p style="margin:0; font-weight:bold;">@${escapeHtml(account.username)}</p>
-                    </div>
-                    <a href="${account.url}" target="_blank" style="font-size:12px; color:#667eea;">زيارة الرابط</a>
+                <div class="drag-handle">☰</div>
+                <div class="account-info">
+                    ${isPrimary ? '<div class="primary-badge">⭐ الحساب الأساسي</div>' : ''}
+                    <div class="username">@${escapeHtml(account.username)}</div>
+                    <a href="${account.url}" target="_blank" class="account-link">🔗 زيارة الحساب</a>
                 </div>
-                <div>
-                    <button class="editAccount" data-id="${account.id}" data-username="${account.username}" data-url="${account.url}" style="background:#ffc107; color:#333; border:none; border-radius:5px; padding:5px 10px; margin:0 3px; cursor:pointer;">✏️</button>
-                    <button class="deleteAccount" data-id="${account.id}" style="background:#dc3545; color:white; border:none; border-radius:5px; padding:5px 10px; margin:0 3px; cursor:pointer;">🗑️</button>
-                    ${!isPrimary ? `<button class="setPrimaryAccount" data-id="${account.id}" data-platform="${platform}" style="background:#28a745; color:white; border:none; border-radius:5px; padding:5px 10px; margin:0 3px; cursor:pointer;">⭐ اجعل أساسي</button>` : ''}
+                <div class="account-actions">
+                    <button class="edit" data-id="${account.id}" data-username="${account.username}" data-url="${account.url}">✏️</button>
+                    <button class="delete" data-id="${account.id}">🗑️</button>
+                    ${!isPrimary ? `<button class="set-primary" data-id="${account.id}" data-platform="${platform}">⭐ اجعل أساسي</button>` : ''}
                 </div>
             `;
             accountsContainer.appendChild(card);
         });
         
-        platformSection.appendChild(platformHeader);
-        platformSection.appendChild(accountsContainer);
-        accountsList.appendChild(platformSection);
+        content.appendChild(accountsContainer);
+        accordion.appendChild(header);
+        accordion.appendChild(content);
+        accountsList.appendChild(accordion);
         
-        // تفعيل السحب والإفلات للحسابات داخل هذه المنصة
+        // تفعيل السحب والإفلات للحسابات
         if (accounts.length >= 2) {
-            const sortableAccounts = new Sortable(accountsContainer, {
+            new Sortable(accountsContainer, {
                 animation: 200,
-                handle: 'div',
+                handle: '.drag-handle',
                 direction: 'vertical',
-                onEnd: async function() {
-                    // بعد انتهاء السحب، حفظ الترتيب الجديد
+                onEnd: async () => {
                     const items = accountsContainer.children;
                     const newOrderIds = [];
                     for (let i = 0; i < items.length; i++) {
@@ -386,43 +359,54 @@ async function loadAccounts() {
                         if (accountId) newOrderIds.push(accountId);
                     }
                     await saveAccountsOrder(platform, newOrderIds);
-                    // إعادة تحميل الحسابات لتحديث علامة "الأساسي"
                     await loadAccounts();
                 }
             });
-            accountsSortable[platform] = sortableAccounts;
+        }
+        
+        // تفعيل حدث الفتح/الإغلاق
+        header.onclick = (e) => {
+            if (e.target.classList.contains('addAccountBtn') || e.target.closest('.addAccountBtn')) return;
+            content.classList.toggle('open');
+            const arrow = header.querySelector('.arrow');
+            if (arrow) arrow.classList.toggle('open');
+        };
+        
+        // فتح الأكورديون الأول افتراضياً
+        if (finalPlatforms.indexOf(platform) === 0) {
+            content.classList.add('open');
+            const arrow = header.querySelector('.arrow');
+            if (arrow) arrow.classList.add('open');
         }
     }
     
-    // إضافة الأحداث للأزرار
-    document.querySelectorAll('.addAccountToPlatform').forEach(btn => {
-        btn.onclick = () => {
-            const platform = btn.dataset.platform;
-            addAccountToPlatform(platform);
+    // إضافة الأحداث
+    document.querySelectorAll('.addAccountBtn').forEach(btn => {
+        btn.onclick = (e) => {
+            e.stopPropagation();
+            addAccountToPlatform(btn.dataset.platform);
         };
     });
     
-    document.querySelectorAll('.editAccount').forEach(btn => {
+    document.querySelectorAll('.edit').forEach(btn => {
         btn.onclick = () => editAccount(btn.dataset.id, btn.dataset.username, btn.dataset.url);
     });
     
-    document.querySelectorAll('.deleteAccount').forEach(btn => {
+    document.querySelectorAll('.delete').forEach(btn => {
         btn.onclick = () => deleteAccount(btn.dataset.id);
     });
     
-    document.querySelectorAll('.setPrimaryAccount').forEach(btn => {
+    document.querySelectorAll('.set-primary').forEach(btn => {
         btn.onclick = () => setPrimaryAccount(btn.dataset.id, btn.dataset.platform);
     });
 }
 
-// تعيين حساب كأساسي للمنصة
 async function setPrimaryAccount(accountId, platform) {
     const q = query(collection(db, 'accounts'), where("userId", "==", currentUser.uid), where("platform", "==", platform));
     const snapshot = await getDocs(q);
     const accounts = [];
     snapshot.forEach(doc => accounts.push({ id: doc.id, data: doc.data() }));
     
-    // ترتيب الحسابات: الأساسي أولاً ثم الباقي
     const otherAccounts = accounts.filter(a => a.id !== accountId);
     const newOrder = [{ id: accountId }, ...otherAccounts];
     
@@ -434,18 +418,15 @@ async function setPrimaryAccount(accountId, platform) {
     await loadAccounts();
 }
 
-// إضافة حساب إلى منصة معينة
 async function addAccountToPlatform(platform) {
     const username = prompt(`أدخل اسم المستخدم في ${platform}:`);
     if (!username) return;
-    const url = prompt(`أدخل الرابط الكامل للحساب (مثل https://${platform.toLowerCase()}.com/username):`);
+    const url = prompt(`أدخل الرابط الكامل للحساب:`);
     if (!url) return;
     
     try {
-        // الحصول على أكبر orderIndex للحسابات الحالية في هذه المنصة
         const q = query(collection(db, 'accounts'), where("userId", "==", currentUser.uid), where("platform", "==", platform));
         const snapshot = await getDocs(q);
-        const maxOrder = snapshot.size;
         
         await addDoc(collection(db, 'accounts'), {
             userId: currentUser.uid,
@@ -453,7 +434,7 @@ async function addAccountToPlatform(platform) {
             username: username,
             url: url,
             createdAt: new Date(),
-            orderIndex: maxOrder
+            orderIndex: snapshot.size
         });
         await loadCustomPlatforms();
         await loadAccounts();
@@ -463,7 +444,6 @@ async function addAccountToPlatform(platform) {
     }
 }
 
-// إضافة حساب جديد من النموذج الرئيسي
 if (addAccountBtn) {
     addAccountBtn.onclick = async () => {
         let platform = platformSelect.value;
@@ -484,10 +464,8 @@ if (addAccountBtn) {
         }
         
         try {
-            // الحصول على أكبر orderIndex للحسابات الحالية في هذه المنصة
             const q = query(collection(db, 'accounts'), where("userId", "==", currentUser.uid), where("platform", "==", platform));
             const snapshot = await getDocs(q);
-            const maxOrder = snapshot.size;
             
             await addDoc(collection(db, 'accounts'), {
                 userId: currentUser.uid,
@@ -495,7 +473,7 @@ if (addAccountBtn) {
                 username: username,
                 url: url,
                 createdAt: new Date(),
-                orderIndex: maxOrder
+                orderIndex: snapshot.size
             });
             
             accountUsername.value = '';
@@ -514,7 +492,6 @@ if (addAccountBtn) {
     };
 }
 
-// تعديل حساب
 async function editAccount(id, oldUsername, oldUrl) {
     const newUsername = prompt('اسم المستخدم:', oldUsername);
     if (newUsername === null) return;
@@ -525,7 +502,6 @@ async function editAccount(id, oldUsername, oldUrl) {
     alert('✅ تم تعديل الحساب بنجاح!');
 }
 
-// حذف حساب
 async function deleteAccount(id) {
     if (confirm('هل أنت متأكد من حذف هذا الحساب؟')) {
         await deleteDoc(doc(db, 'accounts', id));
@@ -539,13 +515,11 @@ function escapeHtml(str) {
     return str.replace(/[&<>]/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[m]));
 }
 
-// ========== ترتيب المنصات ==========
+// ترتيب المنصات
 if (orderPlatformsBtn) {
     orderPlatformsBtn.onclick = async () => {
         if (!currentUser) return;
-        
         await loadCustomPlatforms();
-        
         const allPlats = [...userPlatformsOrder];
         customPlatforms.forEach(p => {
             if (!allPlats.includes(p)) allPlats.push(p);
@@ -557,19 +531,14 @@ if (orderPlatformsBtn) {
             item.setAttribute('data-platform', platform);
             item.style.cssText = 'background: #f8f9fa; padding: 12px; margin: 8px 0; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; cursor: grab; border: 1px solid #dee2e6;';
             item.innerHTML = `
-                <span style="font-size:16px; font-weight:500;">${getPlatformIcon(platform)} ${platform}</span>
-                <span style="cursor:grab; color:#adb5bd; font-size:20px;">☰</span>
+                <span>${getPlatformIcon(platform)} ${platform}</span>
+                <span style="cursor:grab;">☰</span>
             `;
             sortablePlatformsList.appendChild(item);
         });
         
         if (sortable) sortable.destroy();
-        sortable = new Sortable(sortablePlatformsList, {
-            animation: 200,
-            handle: 'div',
-            direction: 'vertical'
-        });
-        
+        sortable = new Sortable(sortablePlatformsList, { animation: 200, handle: 'div', direction: 'vertical' });
         orderModal.style.display = 'flex';
     };
 }
@@ -577,22 +546,18 @@ if (orderPlatformsBtn) {
 if (saveOrderBtn) {
     saveOrderBtn.onclick = async () => {
         if (!currentUser) return;
-        
         const items = sortablePlatformsList.children;
         const newOrder = [];
         for (let i = 0; i < items.length; i++) {
             const platform = items[i].getAttribute('data-platform');
             if (platform) newOrder.push(platform);
         }
-        
         if (newOrder.length > 0) {
             userPlatformsOrder = newOrder;
             await setDoc(doc(db, 'platformsOrder', currentUser.uid), { order: userPlatformsOrder });
             orderModal.style.display = 'none';
             await loadAccounts();
             alert('✅ تم حفظ ترتيب المنصات بنجاح!');
-        } else {
-            alert('حدث خطأ في حفظ الترتيب');
         }
     };
 }
@@ -604,39 +569,21 @@ if (closeOrderBtn) {
     };
 }
 
-// ========== زر المشاركة ==========
+// زر المشاركة
 if (shareBtn) {
     shareBtn.onclick = async () => {
-        if (!currentUser) {
-            alert('الرجاء تسجيل الدخول أولاً');
-            return;
-        }
-        
-        const uid = currentUser.uid;
-        const shortId = uid.substring(0, 6) + uid.substring(uid.length - 4);
+        if (!currentUser) return;
+        const shortId = currentUser.uid.substring(0, 6) + currentUser.uid.substring(currentUser.uid.length - 4);
         const publicLink = `https://rawan-fahad.github.io/abdualrahman/public/?id=${shortId}`;
-        
         try {
             const linksRef = collection(db, 'shortLinks');
             const q = query(linksRef, where("shortId", "==", shortId));
             const snapshot = await getDocs(q);
-            
             if (snapshot.empty) {
-                await addDoc(linksRef, {
-                    shortId: shortId,
-                    userId: uid,
-                    userName: currentProfileName,
-                    createdAt: new Date()
-                });
-            } else {
-                await updateDoc(doc(db, 'shortLinks', snapshot.docs[0].id), {
-                    userName: currentProfileName,
-                    updatedAt: new Date()
-                });
+                await addDoc(linksRef, { shortId: shortId, userId: currentUser.uid, userName: currentProfileName, createdAt: new Date() });
             }
-            
             await navigator.clipboard.writeText(publicLink);
-            alert(`✅ تم نسخ الرابط العام!\n\n${publicLink}\n\nيمكنك إرساله لأي شخص لمشاهدة حساباتك`);
+            alert(`✅ تم نسخ الرابط!\n${publicLink}`);
         } catch (err) {
             alert(`انسخ الرابط يدوياً:\n${publicLink}`);
         }
