@@ -166,22 +166,6 @@ function escapeHtml(str) {
 }
 
 // ========== زر المشاركة - الرابط العام ==========
-// دالة لإنشاء معرف قصير (لإخفاء الـ UID الكامل)
-function getShortId(uid) {
-    // خذ أول 6 حروف وآخر 4 حروف من الـ UID
-    return uid.substring(0, 6) + uid.substring(uid.length - 4);
-}
-
-// دالة للحصول على المسار الأساسي للموقع (يعمل تلقائياً)
-function getBasePath() {
-    const pathname = window.location.pathname;
-    // إذا كان المسار ينتهي بـ /، احذف آخر جزء
-    if (pathname.endsWith('/')) {
-        return pathname.slice(0, -1);
-    }
-    return pathname;
-}
-
 const shareBtn = document.getElementById('shareBtn');
 if (shareBtn) {
     shareBtn.onclick = async () => {
@@ -191,12 +175,11 @@ if (shareBtn) {
         }
         
         const uid = currentUser.uid;
-        const shortId = getShortId(uid); // معرف قصير بدلاً من المعرف الكامل
-        const origin = window.location.origin;
-        const basePath = getBasePath();
+        // إنشاء معرف قصير (أول 6 حروف + آخر 4 حروف)
+        const shortId = uid.substring(0, 6) + uid.substring(uid.length - 4);
         
-        // بناء الرابط العام (مع إخفاء الـ UID الكامل)
-        const publicLink = `${origin}${basePath}/public/?id=${shortId}`;
+        // الرابط الصحيح مع المسار /abdualrahman/public/
+        const publicLink = `https://rawan-fahad.github.io/abdualrahman/public/?id=${shortId}`;
         
         console.log("الرابط العام:", publicLink);
         
@@ -212,6 +195,7 @@ if (shareBtn) {
                     userId: uid,
                     createdAt: new Date()
                 });
+                console.log("تم حفظ الرابط في قاعدة البيانات");
             }
         } catch (err) {
             console.warn("خطأ في حفظ الرابط:", err);
