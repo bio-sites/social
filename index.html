@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>حساباتي الشخصية - مدير الروابط</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
 </head>
 <body>
     <!-- نموذج تسجيل الدخول -->
@@ -59,9 +60,9 @@
         <div style="background:white; border-radius:20px; padding:20px; width:90%; max-width:400px;">
             <h3>📌 ترتيب ظهور المنصات</h3>
             <p style="font-size:14px; color:#666;">اسحب المنصات لترتيبها حسب الأهمية</p>
-            <div id="sortablePlatformsList" style="list-style:none; padding:0;"></div>
-            <button id="saveOrderBtn" style="background-color:#28a745;">💾 حفظ الترتيب</button>
-            <button id="closeOrderBtn" style="background-color:#6c757d;">إغلاق</button>
+            <div id="sortablePlatformsList" style="list-style:none; padding:0; min-height:200px;"></div>
+            <button id="saveOrderBtn" style="background-color:#28a745; margin-top:15px;">💾 حفظ الترتيب</button>
+            <button id="closeOrderBtn" style="background-color:#6c757d; margin-top:15px;">إغلاق</button>
         </div>
     </div>
 
