@@ -12,12 +12,10 @@ import {
 // عناصر DOM
 const authContainer = document.getElementById('authContainer');
 const appContainer = document.getElementById('appContainer');
-const authForm = document.getElementById('authForm');
 const emailInput = document.getElementById('email');
 const passwordInput = document.getElementById('password');
 const signupName = document.getElementById('signupName');
 const loginBtn = document.getElementById('loginBtn');
-const signupBtn = document.getElementById('signupBtn');
 const showSignupBtn = document.getElementById('showSignupBtn');
 const logoutBtn = document.getElementById('logoutBtn');
 const addAccountBtn = document.getElementById('addAccountBtn');
@@ -34,7 +32,6 @@ let currentProfileName = "";
 if (showSignupBtn) {
     showSignupBtn.onclick = () => {
         signupName.style.display = "block";
-        signupName.placeholder = "الاسم الذي سيظهر في صفحتك العامة";
         signupName.focus();
         showSignupBtn.style.display = "none";
     };
@@ -48,7 +45,6 @@ onAuthStateChanged(auth, async (user) => {
         appContainer.style.display = 'block';
         accountsRef = collection(db, 'accounts');
         
-        // تحميل اسم المستخدم من Firestore
         await loadUserProfile();
         await loadAccounts();
     } else {
@@ -56,14 +52,13 @@ onAuthStateChanged(auth, async (user) => {
         authContainer.style.display = 'block';
         appContainer.style.display = 'none';
         accountsList.innerHTML = '';
-        // إعادة تعيين نموذج التسجيل
         signupName.style.display = "none";
         signupName.value = "";
         if (showSignupBtn) showSignupBtn.style.display = "block";
     }
 });
 
-// تحميل ملف المستخدم (الاسم)
+// تحميل اسم المستخدم من Firebase
 async function loadUserProfile() {
     if (!currentUser) return;
     
@@ -79,13 +74,13 @@ async function loadUserProfile() {
         
         if (profileNameSpan) profileNameSpan.innerText = currentProfileName;
     } catch (error) {
-        console.error("خطأ في تحميل الملف الشخصي:", error);
+        console.error("خطأ:", error);
         currentProfileName = "المستخدم";
         if (profileNameSpan) profileNameSpan.innerText = currentProfileName;
     }
 }
 
-// حفظ اسم المستخدم في Firestore
+// حفظ اسم المستخدم في Firebase
 async function saveUserProfile(name) {
     if (!currentUser) return false;
     
@@ -101,8 +96,8 @@ async function saveUserProfile(name) {
         if (profileNameSpan) profileNameSpan.innerText = name;
         return true;
     } catch (error) {
-        console.error("خطأ في حفظ الملف الشخصي:", error);
-        alert("حدث خطأ أثناء حفظ الاسم: " + error.message);
+        console.error("خطأ:", error);
+        alert("حدث خطأ: " + error.message);
         return false;
     }
 }
@@ -112,81 +107,69 @@ if (editProfileBtn) {
     editProfileBtn.onclick = async () => {
         const newName = prompt("أدخل الاسم الذي سيظهر في صفحتك العامة:", currentProfileName);
         if (newName && newName.trim() !== "") {
-            const success = await saveUserProfile(newName.trim());
-            if (success) {
-                alert("✅ تم تحديث اسم المستخدم بنجاح!");
-                
-                // تحديث الرابط العام إذا كان مخزناً مسبقاً
-                const shortId = currentUser.uid.substring(0, 6) + currentUser.uid.substring(currentUser.uid.length - 4);
-                const linksRef = collection(db, 'shortLinks');
-                const q = query(linksRef, where("shortId", "==", shortId));
-                const snapshot = await getDocs(q);
-                
-                if (!snapshot.empty) {
-                    const linkDoc = snapshot.docs[0];
-                    await updateDoc(doc(db, 'shortLinks', linkDoc.id), {
-                        userName: newName.trim(),
-                        updatedAt: new Date()
-                    });
-                }
-            }
+            await saveUserProfile(newName.trim());
+            alert("✅ تم تحديث اسم المستخدم!");
         }
     };
 }
 
 // تسجيل الدخول
-const login = async (email, password) => {
+loginBtn.onclick = async () => {
     try {
-        await signInWithEmailAndPassword(auth, email, password);
+        await signInWithEmailAndPassword(auth, emailInput.value, passwordInput.value);
         authMessage.innerText = '';
     } catch (error) {
-        authMessage.innerText = 'خطأ في تسجيل الدخول: ' + error.message;
+        authMessage.innerText = 'خطأ: ' + error.message;
     }
 };
 
-// إنشاء حساب جديد (مع اسم المستخدم)
-const signup = async (email, password, displayName) => {
-    if (!displayName || displayName.trim() === "") {
+// إنشاء حساب جديد
+signupBtn = document.createElement('button');
+signupBtn.id = 'signupBtn';
+signupBtn.innerText = 'تأكيد إنشاء الحساب';
+signupBtn.style.backgroundColor = '#28a745';
+signupBtn.style.marginTop = '10px';
+signupBtn.style.display = 'none';
+authForm.appendChild(signupBtn);
+
+signupBtn.onclick = async () => {
+    const email = emailInput.value;
+    const password = passwordInput.value;
+    const name = signupName.value;
+    
+    if (!name || name.trim() === "") {
         authMessage.innerText = 'الرجاء إدخال اسم المستخدم';
         return;
     }
     
     try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-        
-        // حفظ اسم المستخدم في Firestore
-        await setDoc(doc(db, 'users', user.uid), {
-            name: displayName.trim(),
+        await setDoc(doc(db, 'users', userCredential.user.uid), {
+            name: name.trim(),
             email: email,
             createdAt: new Date()
         });
-        
         authMessage.innerText = '';
     } catch (error) {
-        authMessage.innerText = 'خطأ في إنشاء الحساب: ' + error.message;
+        authMessage.innerText = 'خطأ: ' + error.message;
     }
 };
 
+// عند ظهور حقل الاسم، نظهر زر التأكيد
+signupName.addEventListener('input', () => {
+    if (signupName.value.trim() !== "") {
+        signupBtn.style.display = 'block';
+    } else {
+        signupBtn.style.display = 'none';
+    }
+});
+
 // تسجيل الخروج
-if (logoutBtn) {
-    logoutBtn.onclick = async () => {
-        await signOut(auth);
-    };
-}
+logoutBtn.onclick = async () => {
+    await signOut(auth);
+};
 
-// معالجة النموذج
-if (authForm) {
-    authForm.onsubmit = (e) => e.preventDefault();
-}
-if (loginBtn) {
-    loginBtn.onclick = () => login(emailInput.value, passwordInput.value);
-}
-if (signupBtn) {
-    signupBtn.onclick = () => signup(emailInput.value, passwordInput.value, signupName.value);
-}
-
-// ---------- عمليات CRUD للحسابات ----------
+// تحميل الحسابات
 async function loadAccounts() {
     if (!currentUser) return;
     const q = query(accountsRef, where("userId", "==", currentUser.uid));
@@ -208,8 +191,8 @@ function displayAccountCard(id, account) {
             <a href="${account.url}" target="_blank">زيارة الرابط</a>
         </div>
         <div class="account-actions">
-            <button class="edit" data-id="${id}">✏️ تعديل</button>
-            <button class="delete" data-id="${id}">🗑️ حذف</button>
+            <button class="edit">✏️ تعديل</button>
+            <button class="delete">🗑️ حذف</button>
         </div>
     `;
     card.querySelector('.edit').onclick = () => editAccount(id, account);
@@ -217,45 +200,42 @@ function displayAccountCard(id, account) {
     accountsList.appendChild(card);
 }
 
-// إضافة حساب جديد
-if (addAccountBtn) {
-    addAccountBtn.onclick = async () => {
-        const platform = document.getElementById('platform').value.trim();
-        const username = document.getElementById('username').value.trim();
-        const url = document.getElementById('url').value.trim();
-        if (!platform || !username || !url) {
-            alert('الرجاء ملء جميع الحقول');
-            return;
-        }
-        try {
-            await addDoc(accountsRef, {
-                userId: currentUser.uid,
-                platform: platform,
-                username: username,
-                url: url,
-                createdAt: new Date()
-            });
-            document.getElementById('platform').value = '';
-            document.getElementById('username').value = '';
-            document.getElementById('url').value = '';
-            loadAccounts();
-        } catch (error) {
-            alert('فشل الإضافة: ' + error.message);
-        }
-    };
-}
+// إضافة حساب
+addAccountBtn.onclick = async () => {
+    const platform = document.getElementById('platform').value.trim();
+    const username = document.getElementById('username').value.trim();
+    const url = document.getElementById('url').value.trim();
+    if (!platform || !username || !url) {
+        alert('الرجاء ملء جميع الحقول');
+        return;
+    }
+    try {
+        await addDoc(accountsRef, {
+            userId: currentUser.uid,
+            platform: platform,
+            username: username,
+            url: url,
+            createdAt: new Date()
+        });
+        document.getElementById('platform').value = '';
+        document.getElementById('username').value = '';
+        document.getElementById('url').value = '';
+        loadAccounts();
+    } catch (error) {
+        alert('فشل الإضافة: ' + error.message);
+    }
+};
 
 // تعديل حساب
 async function editAccount(id, oldAccount) {
-    const newPlatform = prompt('تعديل اسم المنصة:', oldAccount.platform);
+    const newPlatform = prompt('اسم المنصة:', oldAccount.platform);
     if (newPlatform === null) return;
-    const newUsername = prompt('تعديل اسم المستخدم:', oldAccount.username);
+    const newUsername = prompt('اسم المستخدم:', oldAccount.username);
     if (newUsername === null) return;
-    const newUrl = prompt('تعديل الرابط:', oldAccount.url);
+    const newUrl = prompt('الرابط:', oldAccount.url);
     if (newUrl === null) return;
     
-    const accountDoc = doc(db, 'accounts', id);
-    await updateDoc(accountDoc, {
+    await updateDoc(doc(db, 'accounts', id), {
         platform: newPlatform,
         username: newUsername,
         url: newUrl
@@ -265,40 +245,27 @@ async function editAccount(id, oldAccount) {
 
 // حذف حساب
 async function deleteAccount(id) {
-    if (confirm('هل أنت متأكد من حذف هذا الحساب؟')) {
-        const accountDoc = doc(db, 'accounts', id);
-        await deleteDoc(accountDoc);
+    if (confirm('هل أنت متأكد؟')) {
+        await deleteDoc(doc(db, 'accounts', id));
         loadAccounts();
     }
 }
 
-// دالة مساعدة للهروب من HTML
 function escapeHtml(str) {
     if (!str) return '';
-    return str.replace(/[&<>]/g, function(m) {
-        if (m === '&') return '&amp;';
-        if (m === '<') return '&lt;';
-        if (m === '>') return '&gt;';
-        return m;
-    });
+    return str.replace(/[&<>]/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[m]));
 }
 
-// ========== زر المشاركة - الرابط العام ==========
+// زر المشاركة
 const shareBtn = document.getElementById('shareBtn');
 if (shareBtn) {
     shareBtn.onclick = async () => {
-        if (!currentUser) {
-            alert('الرجاء تسجيل الدخول أولاً');
-            return;
-        }
+        if (!currentUser) return;
         
         const uid = currentUser.uid;
         const shortId = uid.substring(0, 6) + uid.substring(uid.length - 4);
         const publicLink = `https://rawan-fahad.github.io/abdualrahman/public/?id=${shortId}`;
         
-        console.log("الرابط العام:", publicLink);
-        
-        // حفظ العلاقة بين المعرف القصير والـ UID الكامل واسم المستخدم
         try {
             const linksRef = collection(db, 'shortLinks');
             const q = query(linksRef, where("shortId", "==", shortId));
@@ -312,20 +279,14 @@ if (shareBtn) {
                     createdAt: new Date()
                 });
             } else {
-                // تحديث الاسم إذا تغير
                 await updateDoc(doc(db, 'shortLinks', snapshot.docs[0].id), {
                     userName: currentProfileName,
                     updatedAt: new Date()
                 });
             }
-        } catch (err) {
-            console.warn("خطأ في حفظ الرابط:", err);
-        }
-        
-        // نسخ الرابط
-        try {
+            
             await navigator.clipboard.writeText(publicLink);
-            alert(`✅ تم نسخ الرابط العام!\n\n${publicLink}\n\nيمكنك إرساله لأي شخص لمشاهدة حساباتك`);
+            alert(`✅ تم نسخ الرابط!\n${publicLink}`);
         } catch (err) {
             alert(`انسخ الرابط يدوياً:\n${publicLink}`);
         }
