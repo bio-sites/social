@@ -39,6 +39,7 @@ let currentProfileName = "";
 let isSignupMode = false;
 let userPlatformsOrder = [];
 let sortable = null;
+let accountsSortable = {}; // لتخزين كائنات Sortable لكل منصة
 
 // المنصات الأساسية المحددة مسبقاً
 const defaultPlatforms = ['TikTok', 'YouTube', 'Instagram', 'Twitter', 'Snapchat', 'Facebook'];
@@ -138,7 +139,6 @@ async function loadCustomPlatforms() {
         
         customPlatforms = [...existingPlatforms].filter(p => !defaultPlatforms.includes(p));
         
-        // تحديث قائمة الاختيار
         updatePlatformSelect();
     } catch (error) {
         console.error("خطأ:", error);
@@ -267,7 +267,23 @@ if (logoutBtn) {
     };
 }
 
-// تحميل وعرض الحسابات (مرتبة حسب المنصة)
+// حفظ ترتيب الحسابات داخل منصة معينة
+async function saveAccountsOrder(platform, accountIds) {
+    if (!currentUser) return;
+    
+    // تحديث ترتيب كل حساب في Firestore
+    for (let i = 0; i < accountIds.length; i++) {
+        const accountRef = doc(db, 'accounts', accountIds[i]);
+        await updateDoc(accountRef, {
+            orderIndex: i,
+            updatedAt: new Date()
+        });
+    }
+    
+    console.log(`✅ تم حفظ ترتيب حسابات منصة ${platform}`);
+}
+
+// تحميل وعرض الحسابات (مرتبة حسب المنصة مع إمكانية السحب)
 async function loadAccounts() {
     if (!currentUser) return;
     const q = query(collection(db, 'accounts'), where("userId", "==", currentUser.uid));
@@ -284,6 +300,15 @@ async function loadAccounts() {
         accountsByPlatform[account.platform].push(account);
     });
     
+    // ترتيب الحسابات داخل كل منصة حسب orderIndex
+    for (const platform in accountsByPlatform) {
+        accountsByPlatform[platform].sort((a, b) => {
+            const aIndex = a.orderIndex !== undefined ? a.orderIndex : 0;
+            const bIndex = b.orderIndex !== undefined ? b.orderIndex : 0;
+            return aIndex - bIndex;
+        });
+    }
+    
     // ترتيب المنصات حسب إعدادات المستخدم
     const orderedPlatforms = userPlatformsOrder.filter(p => accountsByPlatform[p]);
     const otherPlatforms = Object.keys(accountsByPlatform).filter(p => !orderedPlatforms.includes(p));
@@ -291,6 +316,7 @@ async function loadAccounts() {
     
     // عرض الحسابات
     accountsList.innerHTML = '';
+    
     for (const platform of finalPlatforms) {
         const accounts = accountsByPlatform[platform];
         if (!accounts || accounts.length === 0) continue;
@@ -298,6 +324,7 @@ async function loadAccounts() {
         // إنشاء قسم المنصة
         const platformSection = document.createElement('div');
         platformSection.className = 'platform-section';
+        platformSection.setAttribute('data-platform', platform);
         platformSection.style.cssText = 'margin-bottom: 25px; border: 1px solid #ddd; border-radius: 15px; overflow: hidden;';
         
         // رأس المنصة
@@ -310,18 +337,22 @@ async function loadAccounts() {
             </div>
         `;
         
-        // حسابات المنصة
+        // حاوية الحسابات (قابلة للسحب)
         const accountsContainer = document.createElement('div');
-        accountsContainer.style.cssText = 'padding: 10px; background: #f8f9fa;';
+        accountsContainer.className = 'accounts-container';
+        accountsContainer.setAttribute('data-platform', platform);
+        accountsContainer.style.cssText = 'padding: 10px; background: #f8f9fa; min-height: 100px;';
         
+        // إضافة الحسابات
         accounts.forEach((account, idx) => {
             const isPrimary = idx === 0;
             const card = document.createElement('div');
-            card.style.cssText = 'background: white; border-radius: 10px; padding: 12px; margin-bottom: 8px; border-right: 4px solid #667eea; display: flex; justify-content: space-between; align-items: center;';
-            
+            card.setAttribute('data-account-id', account.id);
+            card.style.cssText = 'background: white; border-radius: 10px; padding: 12px; margin-bottom: 8px; border-right: 4px solid #667eea; display: flex; justify-content: space-between; align-items: center; cursor: grab;';
             card.innerHTML = `
                 <div style="flex:1;">
                     <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                        <span style="cursor:grab; color:#999; margin-left:8px;">☰</span>
                         ${isPrimary ? '<span style="background: gold; color: #333; padding: 2px 8px; border-radius: 20px; font-size: 11px;">⭐ الأساسي</span>' : ''}
                         <p style="margin:0; font-weight:bold;">@${escapeHtml(account.username)}</p>
                     </div>
@@ -339,9 +370,31 @@ async function loadAccounts() {
         platformSection.appendChild(platformHeader);
         platformSection.appendChild(accountsContainer);
         accountsList.appendChild(platformSection);
+        
+        // تفعيل السحب والإفلات للحسابات داخل هذه المنصة
+        if (accounts.length >= 2) {
+            const sortableAccounts = new Sortable(accountsContainer, {
+                animation: 200,
+                handle: 'div',
+                direction: 'vertical',
+                onEnd: async function() {
+                    // بعد انتهاء السحب، حفظ الترتيب الجديد
+                    const items = accountsContainer.children;
+                    const newOrderIds = [];
+                    for (let i = 0; i < items.length; i++) {
+                        const accountId = items[i].getAttribute('data-account-id');
+                        if (accountId) newOrderIds.push(accountId);
+                    }
+                    await saveAccountsOrder(platform, newOrderIds);
+                    // إعادة تحميل الحسابات لتحديث علامة "الأساسي"
+                    await loadAccounts();
+                }
+            });
+            accountsSortable[platform] = sortableAccounts;
+        }
     }
     
-    // إضافة الأحداث
+    // إضافة الأحداث للأزرار
     document.querySelectorAll('.addAccountToPlatform').forEach(btn => {
         btn.onclick = () => {
             const platform = btn.dataset.platform;
@@ -362,28 +415,26 @@ async function loadAccounts() {
     });
 }
 
+// تعيين حساب كأساسي للمنصة
 async function setPrimaryAccount(accountId, platform) {
     const q = query(collection(db, 'accounts'), where("userId", "==", currentUser.uid), where("platform", "==", platform));
     const snapshot = await getDocs(q);
     const accounts = [];
     snapshot.forEach(doc => accounts.push({ id: doc.id, data: doc.data() }));
     
-    // إعادة ترتيب الحسابات: الأول هو الأساسي
+    // ترتيب الحسابات: الأساسي أولاً ثم الباقي
     const otherAccounts = accounts.filter(a => a.id !== accountId);
-    const newOrder = [accounts.find(a => a.id === accountId), ...otherAccounts];
+    const newOrder = [{ id: accountId }, ...otherAccounts];
     
-    // تحديث وقت الإنشاء لتحديد الترتيب
     for (let i = 0; i < newOrder.length; i++) {
-        await updateDoc(doc(db, 'accounts', newOrder[i].id), {
-            orderIndex: i,
-            updatedAt: new Date()
-        });
+        await updateDoc(doc(db, 'accounts', newOrder[i].id), { orderIndex: i });
     }
     
     alert(`✅ تم تعيين هذا الحساب كأساسي لمنصة ${platform}`);
     await loadAccounts();
 }
 
+// إضافة حساب إلى منصة معينة
 async function addAccountToPlatform(platform) {
     const username = prompt(`أدخل اسم المستخدم في ${platform}:`);
     if (!username) return;
@@ -391,13 +442,18 @@ async function addAccountToPlatform(platform) {
     if (!url) return;
     
     try {
+        // الحصول على أكبر orderIndex للحسابات الحالية في هذه المنصة
+        const q = query(collection(db, 'accounts'), where("userId", "==", currentUser.uid), where("platform", "==", platform));
+        const snapshot = await getDocs(q);
+        const maxOrder = snapshot.size;
+        
         await addDoc(collection(db, 'accounts'), {
             userId: currentUser.uid,
             platform: platform,
             username: username,
             url: url,
             createdAt: new Date(),
-            orderIndex: Date.now()
+            orderIndex: maxOrder
         });
         await loadCustomPlatforms();
         await loadAccounts();
@@ -407,7 +463,7 @@ async function addAccountToPlatform(platform) {
     }
 }
 
-// إضافة حساب جديد من النموذج
+// إضافة حساب جديد من النموذج الرئيسي
 if (addAccountBtn) {
     addAccountBtn.onclick = async () => {
         let platform = platformSelect.value;
@@ -428,13 +484,18 @@ if (addAccountBtn) {
         }
         
         try {
+            // الحصول على أكبر orderIndex للحسابات الحالية في هذه المنصة
+            const q = query(collection(db, 'accounts'), where("userId", "==", currentUser.uid), where("platform", "==", platform));
+            const snapshot = await getDocs(q);
+            const maxOrder = snapshot.size;
+            
             await addDoc(collection(db, 'accounts'), {
                 userId: currentUser.uid,
                 platform: platform,
                 username: username,
                 url: url,
                 createdAt: new Date(),
-                orderIndex: Date.now()
+                orderIndex: maxOrder
             });
             
             accountUsername.value = '';
@@ -485,7 +546,6 @@ if (orderPlatformsBtn) {
         
         await loadCustomPlatforms();
         
-        // بناء قائمة المنصات
         const allPlats = [...userPlatformsOrder];
         customPlatforms.forEach(p => {
             if (!allPlats.includes(p)) allPlats.push(p);
@@ -503,7 +563,6 @@ if (orderPlatformsBtn) {
             sortablePlatformsList.appendChild(item);
         });
         
-        // تفعيل السحب والإفلات
         if (sortable) sortable.destroy();
         sortable = new Sortable(sortablePlatformsList, {
             animation: 200,
