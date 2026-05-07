@@ -574,7 +574,7 @@ if (shareBtn) {
     shareBtn.onclick = async () => {
         if (!currentUser) return;
         const shortId = currentUser.uid.substring(0, 6) + currentUser.uid.substring(currentUser.uid.length - 4);
-        const publicLink = `https://rawan-fahad.github.io/abdualrahman/public/?id=${shortId}`;
+        const publicLink = `https://bio-sites.github.io/social/public/?id=${shortId}`;
         try {
             const linksRef = collection(db, 'shortLinks');
             const q = query(linksRef, where("shortId", "==", shortId));
