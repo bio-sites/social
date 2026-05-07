@@ -95,4 +95,54 @@ async function loadAccounts(uid, platformsOrder) {
         
         container.innerHTML = '';
         
-        for (const
+        for (const platform of finalPlatforms) {
+            const accounts = accountsByPlatform[platform];
+            if (!accounts) continue;
+            
+            // قسم المنصة
+            const platformDiv = document.createElement('div');
+            platformDiv.style.cssText = 'margin-bottom: 25px; border: 1px solid #ddd; border-radius: 15px; overflow: hidden;';
+            
+            // عنوان المنصة
+            const header = document.createElement('div');
+            header.style.cssText = 'background: linear-gradient(135deg, #667eea, #764ba2); color: white; padding: 12px 15px;';
+            header.innerHTML = `<h3 style="margin:0;">${getPlatformIcon(platform)} ${platform}</h3>`;
+            
+            // الحسابات
+            const accountsDiv = document.createElement('div');
+            accountsDiv.style.cssText = 'padding: 10px; background: #f8f9fa;';
+            
+            accounts.forEach((account, idx) => {
+                const isPrimary = idx === 0;
+                const card = document.createElement('div');
+                card.style.cssText = 'background: white; border-radius: 10px; padding: 12px; margin-bottom: 8px; border-right: 4px solid #667eea;';
+                card.innerHTML = `
+                    ${isPrimary ? '<div style="background: gold; color: #333; padding: 2px 8px; border-radius: 20px; font-size: 11px; display: inline-block; margin-bottom: 5px;">⭐ الحساب الأساسي</div>' : ''}
+                    <p style="margin:5px 0; font-weight:bold;">@${escapeHtml(account.username)}</p>
+                    <a href="${account.url}" target="_blank" style="color:#667eea; text-decoration:none;">🔗 زيارة الحساب</a>
+                `;
+                accountsDiv.appendChild(card);
+            });
+            
+            platformDiv.appendChild(header);
+            platformDiv.appendChild(accountsDiv);
+            container.appendChild(platformDiv);
+        }
+        
+    } catch (err) {
+        container.innerHTML = `<p style="color:red;">⚠️ خطأ: ${err.message}</p>`;
+    }
+}
+
+function getPlatformIcon(platform) {
+    const icons = {
+        'TikTok': '📱', 'YouTube': '🎥', 'Instagram': '📸', 
+        'Twitter': '🐦', 'Snapchat': '👻', 'Facebook': '📘'
+    };
+    return icons[platform] || '🔗';
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[m]));
+}
