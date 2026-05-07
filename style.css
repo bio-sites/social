@@ -4,8 +4,8 @@
     box-sizing: border-box;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
+
 body {
-    
     background: linear-gradient(135deg, #1e3c72, #2a5298);
     min-height: 100vh;
     display: flex;
@@ -13,20 +13,38 @@ body {
     align-items: center;
     padding: 20px;
 }
+
 .auth-container, .app-container {
     background: rgba(255,255,255,0.95);
     border-radius: 20px;
     padding: 2rem;
     width: 100%;
-    max-width: 600px;
+    max-width: 700px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.2);
 }
+
 .auth-container h2, .app-container h1 {
     text-align: center;
     margin-bottom: 1.5rem;
     color: #1e3c72;
 }
-form input, .add-form input {
+
+header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+    gap: 10px;
+}
+
+header div {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+form input, .add-form input, .add-form select {
     width: 100%;
     padding: 12px;
     margin: 8px 0;
@@ -34,6 +52,7 @@ form input, .add-form input {
     border-radius: 8px;
     font-size: 1rem;
 }
+
 button {
     background: #2a5298;
     color: white;
@@ -45,50 +64,216 @@ button {
     font-size: 1rem;
     transition: 0.3s;
 }
+
 button:hover {
     background: #1e3c72;
     transform: scale(1.02);
 }
-#logoutBtn {
+
+#logoutBtn, .delete {
     background: #dc3545;
 }
-#logoutBtn:hover {
+
+#logoutBtn:hover, .delete:hover {
     background: #a71d2a;
 }
-.accounts-grid {
-    margin-top: 20px;
+
+#shareBtn {
+    background: #28a745;
 }
-.account-card {
-    background: #f8f9fa;
+
+#shareBtn:hover {
+    background: #1e7e34;
+}
+
+/* ========== تصميم القوائم المنسدلة (Accordion) ========== */
+.platform-accordion {
+    margin-bottom: 15px;
     border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #e0e0e0;
+    background: white;
+}
+
+.accordion-header {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: white;
+    padding: 15px 20px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: 0.3s;
+    user-select: none;
+}
+
+.accordion-header:hover {
+    background: linear-gradient(135deg, #5a67d8, #6b3fa0);
+}
+
+.accordion-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.accordion-header .arrow {
+    font-size: 1.2rem;
+    transition: transform 0.3s;
+}
+
+.accordion-header .arrow.open {
+    transform: rotate(180deg);
+}
+
+.accordion-header .platform-actions {
+    display: flex;
+    gap: 8px;
+}
+
+.accordion-header .platform-actions button {
+    background: rgba(255,255,255,0.2);
+    color: white;
+    padding: 5px 10px;
+    margin: 0;
+    font-size: 0.8rem;
+}
+
+.accordion-header .platform-actions button:hover {
+    background: rgba(255,255,255,0.4);
+}
+
+.accordion-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease-out;
+    background: #f8f9fa;
+}
+
+.accordion-content.open {
+    max-height: 500px;
+    overflow-y: auto;
+    transition: max-height 0.3s ease-in;
+}
+
+.accounts-list {
     padding: 15px;
-    margin-bottom: 12px;
-    border-right: 5px solid #2a5298;
+}
+
+.account-card {
+    background: white;
+    border-radius: 10px;
+    padding: 12px 15px;
+    margin-bottom: 10px;
+    border-right: 4px solid #667eea;
     display: flex;
     justify-content: space-between;
     align-items: center;
     flex-wrap: wrap;
+    gap: 10px;
+    cursor: grab;
+    transition: 0.2s;
 }
-.account-info h3 {
+
+.account-card:hover {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.account-card.dragging {
+    opacity: 0.5;
+    cursor: grabbing;
+}
+
+.account-info {
+    flex: 1;
+}
+
+.account-info .primary-badge {
+    background: gold;
+    color: #333;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    display: inline-block;
     margin-bottom: 5px;
-    color: #2a5298;
 }
-.account-info p {
-    color: #555;
+
+.account-info .username {
+    margin: 5px 0;
+    font-weight: bold;
+    color: #333;
 }
+
+.account-info .account-link {
+    font-size: 12px;
+    color: #667eea;
+    text-decoration: none;
+}
+
+.account-info .account-link:hover {
+    text-decoration: underline;
+}
+
+.account-actions {
+    display: flex;
+    gap: 5px;
+}
+
 .account-actions button {
-    background: #6c757d;
-    margin: 0 3px;
+    padding: 5px 10px;
+    margin: 0;
+    font-size: 0.8rem;
 }
-.account-actions button.edit {
+
+.account-actions .edit {
     background: #ffc107;
     color: #333;
 }
-.account-actions button.delete {
+
+.account-actions .delete {
     background: #dc3545;
+    color: white;
 }
+
+.account-actions .set-primary {
+    background: #28a745;
+    color: white;
+}
+
+.drag-handle {
+    cursor: grab;
+    color: #999;
+    font-size: 18px;
+    margin-left: 10px;
+}
+
+.drag-handle:active {
+    cursor: grabbing;
+}
+
+.add-form {
+    background: #f0f0f0;
+    padding: 15px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+}
+
+.add-form h3 {
+    margin-bottom: 10px;
+    color: #1e3c72;
+}
+
 #authMessage {
     text-align: center;
     margin-top: 15px;
     color: red;
+}
+
+footer {
+    text-align: center;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid #ddd;
 }
