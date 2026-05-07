@@ -107,4 +107,32 @@ async function loadAccounts(uid, platformsOrder) {
                 const card = document.createElement('div');
                 card.style.cssText = 'background: white; border-radius: 10px; padding: 12px; margin-bottom: 8px; border-right: 4px solid #667eea;';
                 card.innerHTML = `
-                    ${isPrimary ? '<div style="background: gold; color: #333; padding: 2px 8px; border-radius
+                    ${isPrimary ? '<div style="background: gold; color: #333; padding: 2px 8px; border-radius: 20px; font-size: 11px; display: inline-block; margin-bottom: 5px;">⭐ الحساب الأساسي</div>' : ''}
+                    <p style="margin:5px 0; font-weight:bold;">@${escapeHtml(account.username)}</p>
+                    <a href="${account.url}" target="_blank" style="color:#667eea; text-decoration:none;">🔗 زيارة الحساب</a>
+                `;
+                accountsDiv.appendChild(card);
+            });
+            
+            platformDiv.appendChild(header);
+            platformDiv.appendChild(accountsDiv);
+            container.appendChild(platformDiv);
+        }
+        
+    } catch (err) {
+        container.innerHTML = `<p style="color:red;">⚠️ خطأ: ${err.message}</p>`;
+    }
+}
+
+function getPlatformIcon(platform) {
+    const icons = {
+        'TikTok': '📱', 'YouTube': '🎥', 'Instagram': '📸', 
+        'Twitter': '🐦', 'Snapchat': '👻', 'Facebook': '📘'
+    };
+    return icons[platform] || '🔗';
+}
+
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, m => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[m]));
+}
