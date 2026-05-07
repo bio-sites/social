@@ -68,148 +68,83 @@ async function loadAccounts(userId, platformsOrder) {
         const accountsByPlatform = {};
         snapshot.forEach(doc => {
             const acc = doc.data();
-            if (!accountsByPlatform[acc.platform]) accountsByPlatform[accByPlatform[acc.platform.platform] =] = [];
-            [];
-            accountsBy accountsByPlatform[acc.plPlatformatform].[acc.platform].push(push(acc);
-acc);
-        });
+            if (!accountsByPlatform[acc.platform]) accountsByPlatform[acc.platform] = [];
+            accountsByPlatform[acc.platform].push(acc);
         });
         
-               
-        for ( for (const p inconst p in accountsByPlatform) {
-            accountsByPlatform accountsByPlatform) {
-            accountsByPlatform[p].[p].sort((sort((a,a, b) b) => ( => (a.ordera.orderIndex || 0Index || 0) -) - (b (b.orderIndex.orderIndex ||  || 0));
-0));
-        }
+        for (const p in accountsByPlatform) {
+            accountsByPlatform[p].sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
         }
         
-        const ordered        
-        const ordered = platforms = platformsOrder.filterOrder.filter(p =>(p => accountsBy accountsByPlatform[pPlatform[p]);
-        const others = Object.keys(accountsByPlatform).filter(p]);
-        const others = Object.keys(accountsByPlatform).filter(p => ! => !ordered.includesordered.includes(p));
-        const(p));
-        const finalPlatforms = [...ordered finalPlatforms = [...ordered, ..., ...others];
-others];
+        const ordered = platformsOrder.filter(p => accountsByPlatform[p]);
+        const others = Object.keys(accountsByPlatform).filter(p => !ordered.includes(p));
+        const finalPlatforms = [...ordered, ...others];
         
-        container.innerHTML        
-        = '';
- container.innerHTML = '';
+        container.innerHTML = '';
         
-               
-        for for ( (let i = let i = 0; i0; i < finalPlatform < finalPlatforms.lengths.length; i++) {
-; i            const++) {
-            const platform = platform = finalPlatform finalPlatforms[is[i];
-           ];
-            const accounts = accounts const accountsByPlatform = accountsByPlatform[platform[platform];
-           ];
-            if (! if (!accounts)accounts) continue;
- continue;
+        for (let i = 0; i < finalPlatforms.length; i++) {
+            const platform = finalPlatforms[i];
+            const accounts = accountsByPlatform[platform];
+            if (!accounts) continue;
             
-                       
-            const accordion = const accordion = document.createElement document.createElement('div('div');
-            accordion.className');
-            accordion.className = 'platform- = 'accordion';
+            const accordion = document.createElement('div');
+            accordion.className = 'platform-accordion';
             
-platform-accordion';
+            const header = document.createElement('div');
+            header.className = 'accordion-header';
+            header.innerHTML = `<h3><span>${getIcon(platform)} ${platform}</span><span class="arrow">▼</span></h3>`;
             
-            const header =            const header document.createElement = document.createElement('div('div');
-            header.class');
-            header.className =Name = 'accord 'accordion-headerion-header';
-            header.innerHTML';
-            header.innerHTML = = `<h3 `<h3><span>${><span>${getIcon(platformgetIcon(platform)} ${)} ${platform}</platform}</spanspan><span class><span class="arrow">▼="arrow">▼</span></h3>`;
+            const content = document.createElement('div');
+            content.className = 'accordion-content';
             
-</span></h3>`;
+            const list = document.createElement('div');
+            list.className = 'accounts-list';
             
-            const            const content = content = document.createElement document.createElement('div');
-            content.class('div');
-           Name = content.className = 'accord 'accordion-contention-content';
-            
-';
-            
-            const list =            const list = document.createElement document.createElement('div('div');
-');
-            list.class            list.className =Name = 'accounts 'accounts-list';
--list';
-            
-            accounts.forEach            
-            accounts.forEach((acc((acc, idx, idx) =>) => {
-                {
-                const card = document const card = document.createElement('div');
-.createElement('div');
-                card                card.className = 'account-card';
-                card.innerHTML.className = 'account-card';
+            accounts.forEach((acc, idx) => {
+                const card = document.createElement('div');
+                card.className = 'account-card';
                 card.innerHTML = `
- = `
-                    ${                    ${idx ===idx === 0 0 ? ? '<div class="primary-badge">⭐ '<div class="primary-badge">⭐ الحس الحساب الأساساب الأساسي</ي</div>'div>' : ''}
-                    : ''}
-                    <div <div class=" class="username">username">@${escapeHtml@${escapeHtml(acc.username)}(acc.username)}</div</div>
-                   >
-                    <a <a href="${ href="${acc.urlacc.url}" target="_blank}" target="_blank" class" class="account="account-link">🔗 زيارة-link">🔗 زيارة الحس الحساب</a>
-اب</a>
-                `                `;
-               ;
-                list.appendChild list.appendChild(card(card);
-           );
+                    ${idx === 0 ? '<div class="primary-badge">⭐ الحساب الأساسي</div>' : ''}
+                    <div class="username">@${escapeHtml(acc.username)}</div>
+                    <a href="${acc.url}" target="_blank" class="account-link">🔗 زيارة الحساب</a>
+                `;
+                list.appendChild(card);
             });
             
-            content });
-            
-.appendChild(list);
-                       content.appendChild(list);
-            accordion accordion.appendChild(header);
-            accord.appendChild(ion.appendChildheader);
+            content.appendChild(list);
+            accordion.appendChild(header);
             accordion.appendChild(content);
-(content);
-                       container.appendChild( container.appendChild(accordion);
+            container.appendChild(accordion);
             
-            ifaccordion);
-            
-            if (i ===  (i === 0) {
-               0) {
-                content.classList content.classList.add('.add('open');
-open');
-                header                header.querySelector('.arrow').querySelector('.arrow')?.class?.classList.add('openList.add('open');
-           ');
+            if (i === 0) {
+                content.classList.add('open');
+                const arrow = header.querySelector('.arrow');
+                if (arrow) arrow.classList.add('open');
             }
             
-            header }
-            
             header.onclick = () => {
-                content.onclick = () => {
-                content.classList.t.classList.toggle('oggle('open');
-open');
-                header                header.querySelector('..querySelector('.arrow')arrow')?.?.classclassList.tList.toggle('open');
-oggle('            };
-open');
+                content.classList.toggle('open');
+                const arrow = header.querySelector('.arrow');
+                if (arrow) arrow.classList.toggle('open');
             };
         }
-        }
-    } catch (    } catch (err) {
+        
+        console.log("تم عرض الحسابات كقوائم منسدلة بنجاح!");
+    } catch (err) {
         console.error(err);
-        container.innerHTML =err) {
-        console.error(err);
-        container.innerHTML = `<p `<p style=" style="color:color:red;">خطأred;">خطأ:: ${err.message ${err.message}</p}</p>`;
->`;
-    }
+        container.innerHTML = `<p style="color:red;">خطأ: ${err.message}</p>`;
     }
 }
 
-function}
-
-function getIcon getIcon(platform(platform) {
-    const) {
-    const icons = icons = { ' { 'TikTikTok': 'Tok': '📱',📱', 'YouTube 'YouTube': '🎥': '🎥', 'Instagram': '📸',', 'Instagram': '📸', 'Twitter 'Twitter': '': '🐦🐦', '', 'Snapchat':Snapchat': '👻', '👻', 'Facebook 'Facebook': '': '📘' };
-📘' };
-    return    return icons icons[platform][platform] || ' || '🔗🔗';
+function getIcon(platform) {
+    const icons = {
+        'TikTok': '📱', 'YouTube': '🎥', 'Instagram': '📸',
+        'Twitter': '🐦', 'Snapchat': '👻', 'Facebook': '📘'
+    };
+    return icons[platform] || '🔗';
 }
 
-function escape';
-}
-
-function escapeHtml(strHtml(str) {
-) {
-    if    if (!str (!str)) return return '';
-    return str '';
-    return str.replace(/[&.replace(/[&<>]/<>]/g, m => ({ 'g, m => ({ '&':&': '& '&amp;amp;', '<': '&lt;', '>', '<': '&lt;', '>': '': '&gt&gt;';' } }[m]));
-[m]));
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[m]));
 }
