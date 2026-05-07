@@ -1,132 +1,27 @@
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, collection, getDocs, query, where, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyA4sIfT6u6n8XWRPn2dLktlKfEP16VPw40",
+    authDomain: "my-social-links-ede8c.firebaseapp.com",
+    projectId: "my-social-links-ede8c",
+    storageBucket: "my-social-links-ede8c.firebasestorage.app",
+    messagingSenderId: "515940881963",
+    appId: "1:515940881963:web:5093dc75b133024d52bc6e"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+const container = document.getElementById('accountsListPublic');
+const usernameDisplaySpan = document.getElementById('usernameDisplay');
+const fullUrl = window.location.href;
+
+let shortId = null;
+const match = fullUrl.match(/[?&]id=([^&]+)/);
+if (match && match[1]) {
+    shortId = match[1];
 }
 
-body {
-    background: linear-gradient(135deg, #1e3c72, #2a5298);
-    min-height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 20px;
-}
-
-.public-container {
-    background: rgba(255,255,255,0.95);
-    border-radius: 20px;
-    padding: 2rem;
-    width: 100%;
-    max-width: 600px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-}
-
-h1 {
-    text-align: center;
-    color: #1e3c72;
-    margin-bottom: 1.5rem;
-}
-
-/* القوائم المنسدلة للعرض العام */
-.platform-accordion {
-    margin-bottom: 15px;
-    border-radius: 12px;
-    overflow: hidden;
-    border: 1px solid #e0e0e0;
-    background: white;
-}
-
-.accordion-header {
-    background: linear-gradient(135deg, #667eea, #764ba2);
-    color: white;
-    padding: 15px 20px;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.accordion-header h3 {
-    margin: 0;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.accordion-header .arrow {
-    font-size: 1rem;
-    transition: transform 0.3s;
-}
-
-.accordion-header .arrow.open {
-    transform: rotate(180deg);
-}
-
-.accordion-content {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.3s ease-out;
-    background: #f8f9fa;
-}
-
-.accordion-content.open {
-    max-height: 500px;
-    overflow-y: auto;
-    transition: max-height 0.3s ease-in;
-}
-
-.accounts-list {
-    padding: 15px;
-}
-
-.account-card {
-    background: white;
-    border-radius: 10px;
-    padding: 12px 15px;
-    margin-bottom: 10px;
-    border-right: 4px solid #667eea;
-}
-
-.primary-badge {
-    background: gold;
-    color: #333;
-    padding: 2px 8px;
-    border-radius: 20px;
-    font-size: 11px;
-    display: inline-block;
-    margin-bottom: 5px;
-}
-
-.username {
-    margin: 5px 0;
-    font-weight: bold;
-    color: #333;
-}
-
-.account-link {
-    font-size: 12px;
-    color: #667eea;
-    text-decoration: none;
-}
-
-.account-link:hover {
-    text-decoration: underline;
-}
-
-footer {
-    text-align: center;
-    margin-top: 20px;
-    padding-top: 15px;
-    border-top: 1px solid #ddd;
-}
-
-footer a {
-    color: #2a5298;
-    text-decoration: none;
-}
-
-footer a:hover {
-    text-decoration: underline;
-}
+if (!shortId) {
+    container.innerHTML =
